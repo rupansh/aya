@@ -1,11 +1,27 @@
 use std::{ffi::CString, fs, io};
 
-use aya::{EbpfLoader, programs::XdpFlags};
+use aya::{EbpfLoader, programs::XdpFlags, util::KernelVersion};
 use aya_xdp_dispatcher::{EbpfPrograms, XdpDispatcher};
 use libc::if_nametoindex;
 use uuid::Uuid;
 
 use crate::utils::NetNsGuard;
+
+/// XDP dispatcher uses BPF Extension programs which require trampolines.
+/// arm64 BPF trampoline support was added in kernel 6.0
+/// (torvalds/linux commit efc9909fdce0).
+fn skip_if_no_bpf_trampoline() -> bool {
+    if cfg!(target_arch = "aarch64")
+        && KernelVersion::current().unwrap() < KernelVersion::new(6, 0, 0)
+    {
+        eprintln!(
+            "skipping test: BPF trampoline not supported on aarch64 before 6.0, \
+             required for Extension program attach"
+        );
+        return true;
+    }
+    false
+}
 
 const RTDIR_FS_XDP: &str = "/sys/fs/bpf/xdp";
 
@@ -63,6 +79,9 @@ fn cleanup_dispatcher(if_index: u32) {
 
 #[test_log::test]
 fn xdp_dispatcher_single_program() {
+    if skip_if_no_bpf_trampoline() {
+        return;
+    }
     let _netns = NetNsGuard::new();
     let if_index = get_lo_ifindex();
 
@@ -96,6 +115,9 @@ fn xdp_dispatcher_single_program() {
 
 #[test_log::test]
 fn xdp_dispatcher_multiple_programs_same_loader() {
+    if skip_if_no_bpf_trampoline() {
+        return;
+    }
     let _netns = NetNsGuard::new();
     let if_index = get_lo_ifindex();
 
@@ -127,6 +149,9 @@ fn xdp_dispatcher_multiple_programs_same_loader() {
 
 #[test_log::test]
 fn xdp_dispatcher_two_dispatchers_ownership() {
+    if skip_if_no_bpf_trampoline() {
+        return;
+    }
     let _netns = NetNsGuard::new();
     let if_index = get_lo_ifindex();
 
@@ -186,6 +211,9 @@ fn xdp_dispatcher_two_dispatchers_ownership() {
 
 #[test_log::test]
 fn xdp_dispatcher_priority_ordering() {
+    if skip_if_no_bpf_trampoline() {
+        return;
+    }
     let _netns = NetNsGuard::new();
     let if_index = get_lo_ifindex();
 
@@ -220,6 +248,9 @@ fn xdp_dispatcher_priority_ordering() {
 
 #[test_log::test]
 fn xdp_dispatcher_interleaved_drops() {
+    if skip_if_no_bpf_trampoline() {
+        return;
+    }
     let _netns = NetNsGuard::new();
     let if_index = get_lo_ifindex();
 

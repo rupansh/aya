@@ -16,7 +16,6 @@ workspace = true
 [dependencies]
 aya = { path = "../aya", version = "0.13.2" }
 aya-xdp-dispatcher-ebpf = { path = "../ebpf/aya-xdp-dispatcher-ebpf", version = "0.1.0" }
-bytemuck = { workspace = true }
 log = { workspace = true }
 nix = { workspace = true, features = ["fs"] }
 thiserror = { workspace = true }
